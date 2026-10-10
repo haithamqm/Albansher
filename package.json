@@ -1,0 +1,27 @@
+{
+  "name": "smart-banshur-services",
+  "version": "1.0.0",
+  "private": true,
+  "description": "البنشر الذكي: Arabic-first roadside tire and vehicle services platform with customer, provider, and admin portals",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check server.js && node --check public/customer.js && node --check public/provider.js && node --check public/admin.js && node --check public/brand.js && node --check public/sw.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1",
+    "socket.io": "^4.8.1"
+  }
+}
