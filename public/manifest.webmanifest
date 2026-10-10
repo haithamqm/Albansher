@@ -1,1 +1,12 @@
-{"name":"البنشر الذكي","short_name":"البنشر الذكي","lang":"ar","dir":"rtl","start_url":"/","display":"standalone","background_color":"#f6f9fa","theme_color":"#123047","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+  "name": "البنشر الذكي | Smart Tire Service",
+  "short_name": "البنشر الذكي",
+  "description": "خدمات المركبات والبنشر المتنقل والعروض والمنتجات",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f7fa",
+  "theme_color": "#102c46",
+  "icons": [{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
