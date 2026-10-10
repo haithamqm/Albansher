@@ -122,7 +122,7 @@ test('admin portal login explicitly requests administrator email, not phone numb
   assert.match(server, /portal==='admin'[\s\S]*?WHERE email=\? AND role=\\'admin\\'/);
   assert.match(server, /أدخل البريد الإلكتروني الإداري/);
   assert.match(app, /if\(routeMode==='admin'\)mode='login'/);
-  assert.match(sw, /ban-shar-static-v5/);
+  assert.match(sw, /ban-shar-static-v6/);
 });
 
 
@@ -137,4 +137,24 @@ test('first admin must change the one-time password before using admin APIs', ()
   assert.match(auth, /يجب تغيير كلمة مرور المدير المؤقتة أولًا/);
   assert.match(db, /ALTER TABLE users ADD COLUMN must_change_password/);
   assert.match(app, /must_change_password/);
+});
+
+test('portal registration and login are restricted to the role for each route', () => {
+  const server = read('src/server.js');
+  assert.match(server, /const allowedRole=portal==='provider'\?'provider':\(\['customer','home'\]\.includes\(portal\)\?'customer':null\)/);
+  assert.match(server, /if\(!allowedRole\) return res\.status\(403\)/);
+  assert.match(server, /WHERE role=\\'customer\\' AND \(phone=\? OR email=\?\)/);
+  assert.match(server, /\['admin','provider','customer'\]\.includes\(portal\)/);
+});
+
+test('stale or wrong-role sessions are reconciled and cross-portal footer links are hidden outside admin', () => {
+  const app = read('public/app.js');
+  const css = read('public/styles.css');
+  const auth = read('src/auth.js');
+  assert.match(app, /async function bootAuth\(\)/);
+  assert.match(app, /fetch\('\/api\/me'/);
+  assert.match(app, /data\.code==='ROLE_FORBIDDEN'/);
+  assert.match(auth, /code: 'ROLE_FORBIDDEN'/);
+  assert.match(css, /\.route-links\{display:none!important\}/);
+  assert.match(css, /body\.route-admin \.route-links\{display:flex!important\}/);
 });

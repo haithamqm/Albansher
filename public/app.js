@@ -8,7 +8,7 @@ let activeRequestKey=null;
 function t(ar,en){return state.lang==='ar'?ar:en}
 function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),3000)}
-async function api(url, options={}){const headers={'Content-Type':'application/json',...(options.headers||{})};if(state.token)headers.Authorization=`Bearer ${state.token}`;const r=await fetch(url,{...options,headers});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||`HTTP ${r.status}`);return data}
+async function api(url, options={}){const headers={'Content-Type':'application/json',...(options.headers||{})};if(state.token)headers.Authorization=`Bearer ${state.token}`;const r=await fetch(url,{...options,headers});const data=await r.json().catch(()=>({}));if(!r.ok){if(data.code==='ROLE_FORBIDDEN'){localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');state.token='';state.user=null;renderAuthState();}const error=new Error(data.error||`HTTP ${r.status}`);error.status=r.status;error.code=data.code;throw error}return data}
 function applyPrefs(){document.documentElement.lang=state.lang;document.documentElement.dir=state.lang==='ar'?'rtl':'ltr';document.body.classList.toggle('dark',state.theme==='dark');$$('[data-ar][data-en]').forEach(el=>{if(el.matches('input,textarea'))return;el.innerHTML=el.dataset[state.lang]});$$('[data-placeholder-ar][data-placeholder-en]').forEach(el=>el.placeholder=el.dataset[`placeholder${state.lang==='ar'?'Ar':'En'}`]);$('#langBtn').textContent=state.lang==='ar'?'EN':'عربي';$('#themeBtn').textContent=state.theme==='dark'?'☀':'☾';document.title=t('البنشر الذكي','Smart Tire Service');}
 function setAuth(user,token){state.user=user;state.token=token||'';if(token)localStorage.setItem('bs_token',token);else localStorage.removeItem('bs_token');if(user)localStorage.setItem('bs_user',JSON.stringify(user));else localStorage.removeItem('bs_user');renderAuthState()}
 const routePath=location.pathname.replace(/\/+$/,'')||'/';
@@ -26,7 +26,7 @@ function applyRouteView(){
  }
  $('#authOpen').classList.toggle('hidden',!!state.user&&!!state.token);
  const roleSelect=$('#registerRole');
- if(roleSelect){const desired=routeMode==='provider'?'provider':'customer';[...roleSelect.options].forEach(o=>o.hidden=routeMode==='admin'||(routeMode!=='home'&&o.value!==desired));if(routeMode!=='home'&&routeMode!=='admin')roleSelect.value=desired;}
+ if(roleSelect){const desired=routeMode==='provider'?'provider':'customer';[...roleSelect.options].forEach(o=>o.hidden=routeMode==='admin'||o.value!==desired);if(routeMode!=='admin')roleSelect.value=desired;}
  $$('.tab[data-mode="register"]').forEach(b=>b.classList.toggle('hidden',routeMode==='admin'));
  updateIdentifierField();
 }
@@ -95,5 +95,19 @@ $('#productForm').addEventListener('submit',async e=>{e.preventDefault();const d
 $('#offerForm').addEventListener('submit',async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));data.price=data.price?Number(data.price):null;for(const k of ['starts_at','ends_at'])if(data[k])data[k]=new Date(data[k]).toISOString();else data[k]=null;try{await api('/api/admin/offers',{method:'POST',body:JSON.stringify(data)});toast(t('تم نشر العرض.','Offer published.'));e.currentTarget.reset();loadOffers();loadAdminOffers()}catch(err){toast(err.message)}});
 $('#langBtn').addEventListener('click',()=>{state.lang=state.lang==='ar'?'en':'ar';localStorage.setItem('bs_lang',state.lang);applyPrefs();loadServices();loadProducts();loadOffers();renderAuthState()});$('#themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';localStorage.setItem('bs_theme',state.theme);applyPrefs()});
 $('#year').textContent=new Date().getFullYear();
-applyPrefs();loadServices();loadProducts();loadOffers();renderAuthState();applyRouteView();
+async function bootAuth(){
+ if(state.token){
+  try{
+   const response=await fetch('/api/me',{headers:{Authorization:`Bearer ${state.token}`}});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok||!data.user)throw new Error('session-invalid');
+   state.user=data.user;localStorage.setItem('bs_user',JSON.stringify(data.user));
+  }catch{
+   state.token='';state.user=null;localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');
+  }
+ }
+ renderAuthState();
+ if(routeMode==='home'&&state.user){const path={customer:'/customer',provider:'/provider',admin:'/admin'}[state.user.role];if(path)location.replace(path);}
+}
+applyPrefs();loadServices();loadProducts();loadOffers();bootAuth();applyRouteView();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));

@@ -28,9 +28,8 @@ body.route-provider #home,body.route-provider #request,body.route-provider #serv
 body.route-provider #providerPanel{display:block!important}
 body.route-admin #home,body.route-admin #request,body.route-admin #services,body.route-admin #offers,body.route-admin #myOrders,body.route-admin #providerPanel,body.route-admin .bottom-nav{display:none!important}
 body.route-admin #adminPanel{display:block!important}
-body.route-customer .route-links a[href="/provider"],body.route-customer .route-links a[href="/admin"]{display:none}
-body.route-provider .route-links a[href="/customer"],body.route-provider .route-links a[href="/admin"]{display:none}
-body.route-admin .route-links a[href="/customer"],body.route-admin .route-links a[href="/provider"]{display:none}
+.route-links{display:none!important}
+body.route-admin .route-links{display:flex!important}
 
 body.route-customer.route-locked #home,body.route-customer.route-locked #request,body.route-customer.route-locked #services,body.route-customer.route-locked #offers,body.route-customer.route-locked #myOrders{display:none!important}
 body.route-provider.route-locked #providerPanel,body.route-admin.route-locked #adminPanel{display:none!important}

@@ -110,9 +110,12 @@ app.get('/api/branches',(_req,res)=>res.json(db.prepare('SELECT id,name_ar,name_
 
 app.post('/api/auth/register', (req,res)=>{
  const name=cleanText(req.body.name,100), phone=cleanText(req.body.phone,30), email=cleanText(req.body.email,254).toLowerCase(), password=req.body.password, role=req.body.role;
+ const portal=cleanText(req.body.portal,20);
+ const allowedRole=portal==='provider'?'provider':(['customer','home'].includes(portal)?'customer':null);
+ if(!allowedRole) return res.status(403).json({error:'إنشاء الحسابات متاح من بوابة العميل أو بوابة مقدم الخدمة فقط.'});
+ if(role!==allowedRole) return res.status(403).json({error:portal==='provider'?'هذا الرابط مخصص لتسجيل مقدمي الخدمة فقط.':'هذا الرابط مخصص لتسجيل حسابات العملاء فقط.'});
  if (!name || !phone || typeof password!=='string' || password.length<10 || !['customer','provider'].includes(role)) return res.status(400).json({error:'أدخل الاسم والهاتف وكلمة مرور من 10 أحرف على الأقل، وحدد نوع الحساب.'});
  if (role==='provider' && (!email || !/^\S+@\S+\.\S+$/.test(email))) return res.status(400).json({error:'البريد الإلكتروني مطلوب لحساب مقدم الخدمة.'});
- if (['customer','provider'].includes(req.body.portal) && role!==req.body.portal) return res.status(403).json({error:'هذا الرابط مخصص لتسجيل نوع حساب مختلف.'});
  try {
   const result=db.transaction(()=>{
    const info=db.prepare('INSERT INTO users(name,phone,email,password_hash,role,status) VALUES (?,?,?,?,?,?)').run(name,phone,email||null,hashPassword(password),role,role==='provider'?'pending':'active');
@@ -124,13 +127,15 @@ app.post('/api/auth/register', (req,res)=>{
  } catch(e) { if(String(e.message).includes('UNIQUE')) return res.status(409).json({error:'رقم الهاتف أو البريد الإلكتروني مستخدم بالفعل'}); throw e; }
 });
 app.post('/api/auth/login',(req,res)=>{
- const identifier=cleanText(req.body.identifier,254), password=req.body.password, portal=cleanText(req.body.portal,20);
+ const identifier=cleanText(req.body.identifier,254), password=req.body.password, rawPortal=cleanText(req.body.portal,20);
+ const portal=rawPortal==='home'?'customer':rawPortal;
+ if(!['admin','provider','customer'].includes(portal)) return res.status(400).json({error:'رابط تسجيل الدخول غير معروف.'});
  if ((portal==='admin' || portal==='provider') && !/^\S+@\S+\.\S+$/.test(identifier)) return res.status(400).json({error:portal==='admin'?'أدخل البريد الإلكتروني الإداري.':'أدخل البريد الإلكتروني لمقدم الخدمة.'});
  const user=portal==='admin'
   ? db.prepare('SELECT * FROM users WHERE email=? AND role=\'admin\'').get(identifier.toLowerCase())
   : portal==='provider'
    ? db.prepare('SELECT * FROM users WHERE email=? AND role=\'provider\'').get(identifier.toLowerCase())
-   : db.prepare('SELECT * FROM users WHERE phone=? OR email=?').get(identifier,identifier.toLowerCase());
+   : db.prepare('SELECT * FROM users WHERE role=\'customer\' AND (phone=? OR email=?)').get(identifier,identifier.toLowerCase());
  if(!user || !verifyPassword(String(password||''),user.password_hash)) return res.status(401).json({error:'بيانات الدخول غير صحيحة'});
  if(user.status!=='active' && !(user.role==='provider'&&user.status==='pending')) return res.status(403).json({error:'الحساب غير نشط أو موقوف'});
  const token=createToken(user); audit(user.id,'user.login','user',user.id,'');
