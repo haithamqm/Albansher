@@ -109,3 +109,32 @@ test('first administrator and JWT secret bootstrap without required Railway vari
   assert.match(auth, /crypto\.randomBytes\(48\)/);
   assert.doesNotMatch(server, /Production startup blocked: set ADMIN_PASSWORD/);
 });
+
+
+test('admin portal login explicitly requests administrator email, not phone number', () => {
+  const app = read('public/app.js');
+  const sw = read('public/sw.js');
+  assert.match(app, /routeMode==='admin'\|\|routeMode==='provider'\)kind='email'/);
+  assert.match(app, /البريد الإلكتروني للمدير/);
+  assert.match(app, /input\.type='email'/);
+  assert.match(app, /portal:routeMode/);
+  const server = read('src/server.js');
+  assert.match(server, /portal==='admin'[\s\S]*?WHERE email=\? AND role=\\'admin\\'/);
+  assert.match(server, /أدخل البريد الإلكتروني الإداري/);
+  assert.match(app, /if\(routeMode==='admin'\)mode='login'/);
+  assert.match(sw, /ban-shar-static-v5/);
+});
+
+
+test('first admin must change the one-time password before using admin APIs', () => {
+  const server = read('src/server.js');
+  const auth = read('src/auth.js');
+  const db = read('src/db.js');
+  const app = read('public/app.js');
+  assert.match(server, /must_change_password\) VALUES \(\?,\?,\?,'admin','active',1\)/);
+  assert.match(server, /كلمة المرور المؤقتة/);
+  assert.match(server, /must_change_password=0/);
+  assert.match(auth, /يجب تغيير كلمة مرور المدير المؤقتة أولًا/);
+  assert.match(db, /ALTER TABLE users ADD COLUMN must_change_password/);
+  assert.match(app, /must_change_password/);
+});

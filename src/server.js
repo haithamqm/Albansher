@@ -85,7 +85,7 @@ function bootstrapAdmin() {
  if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 12) {
   throw new Error('تعذر إنشاء حساب الإدارة الأول: تحقق من بيانات الإدارة المخصصة إن كانت مضبوطة.');
  }
- db.prepare("INSERT INTO users(name,email,password_hash,role,status) VALUES (?,?,?,'admin','active')").run(name, email, hashPassword(password));
+ db.prepare("INSERT INTO users(name,email,password_hash,role,status,must_change_password) VALUES (?,?,?,'admin','active',1)").run(name, email, hashPassword(password));
  console.log('='.repeat(68));
  console.log('البنشر الذكي | بيانات دخول المدير الأول — احتفظ بها بسرية');
  console.log(`البريد الإلكتروني: ${email}`);
@@ -124,12 +124,17 @@ app.post('/api/auth/register', (req,res)=>{
  } catch(e) { if(String(e.message).includes('UNIQUE')) return res.status(409).json({error:'رقم الهاتف أو البريد الإلكتروني مستخدم بالفعل'}); throw e; }
 });
 app.post('/api/auth/login',(req,res)=>{
- const identifier=cleanText(req.body.identifier,254), password=req.body.password;
- const user=db.prepare('SELECT * FROM users WHERE phone=? OR email=?').get(identifier,identifier.toLowerCase());
+ const identifier=cleanText(req.body.identifier,254), password=req.body.password, portal=cleanText(req.body.portal,20);
+ if ((portal==='admin' || portal==='provider') && !/^\S+@\S+\.\S+$/.test(identifier)) return res.status(400).json({error:portal==='admin'?'أدخل البريد الإلكتروني الإداري.':'أدخل البريد الإلكتروني لمقدم الخدمة.'});
+ const user=portal==='admin'
+  ? db.prepare('SELECT * FROM users WHERE email=? AND role=\'admin\'').get(identifier.toLowerCase())
+  : portal==='provider'
+   ? db.prepare('SELECT * FROM users WHERE email=? AND role=\'provider\'').get(identifier.toLowerCase())
+   : db.prepare('SELECT * FROM users WHERE phone=? OR email=?').get(identifier,identifier.toLowerCase());
  if(!user || !verifyPassword(String(password||''),user.password_hash)) return res.status(401).json({error:'بيانات الدخول غير صحيحة'});
  if(user.status!=='active' && !(user.role==='provider'&&user.status==='pending')) return res.status(403).json({error:'الحساب غير نشط أو موقوف'});
  const token=createToken(user); audit(user.id,'user.login','user',user.id,'');
- res.json({token,user:publicUser(user)});
+ res.json({token,user:{...publicUser(user),must_change_password:Boolean(user.must_change_password)}});
 });
 app.get('/api/me',requireAuth,(req,res)=>{
  const profile=req.user.role==='provider'?db.prepare('SELECT * FROM provider_profiles WHERE user_id=?').get(req.user.id):null;
@@ -229,7 +234,7 @@ app.get('/api/admin/provider-documents/:id/download',requireAuth,requireRole('ad
 // Admin-only data and controls
 app.get('/api/admin/admins',requireAuth,requireRole('admin'),(_req,res)=>res.json(db.prepare("SELECT id,name,email,status,created_at FROM users WHERE role='admin' ORDER BY id").all()));
 app.post('/api/admin/admins',requireAuth,requireRole('admin'),(req,res)=>{const name=cleanText(req.body.name,100),email=cleanText(req.body.email,254).toLowerCase(),password=String(req.body.password||'');if(!name||!/^\S+@\S+\.\S+$/.test(email)||password.length<12)return res.status(400).json({error:'أدخل الاسم والبريد وكلمة مرور من 12 حرفًا على الأقل'});try{const r=db.prepare("INSERT INTO users(name,email,password_hash,role,status) VALUES (?,?,?,'admin','active')").run(name,email,hashPassword(password));audit(req.user.id,'admin.created','user',r.lastInsertRowid,email);res.status(201).json({id:r.lastInsertRowid,name,email,role:'admin'});}catch(e){if(String(e.message).includes('UNIQUE'))return res.status(409).json({error:'البريد الإلكتروني مستخدم بالفعل'});throw e;}});
-app.patch('/api/admin/account',requireAuth,requireRole('admin'),(req,res)=>{const current=String(req.body.current_password||''),next=String(req.body.new_password||''),email=req.body.email===undefined?'':cleanText(req.body.email,254).toLowerCase();const row=db.prepare('SELECT password_hash FROM users WHERE id=?').get(req.user.id);if(!verifyPassword(current,row.password_hash))return res.status(400).json({error:'كلمة المرور الحالية غير صحيحة'});if(email&&!/^\S+@\S+\.\S+$/.test(email))return res.status(400).json({error:'صيغة البريد الإلكتروني غير صحيحة'});if(next&&next.length<12)return res.status(400).json({error:'كلمة المرور الجديدة يجب أن تكون 12 حرفًا على الأقل'});try{if(email)db.prepare('UPDATE users SET email=? WHERE id=?').run(email,req.user.id);if(next)db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(hashPassword(next),req.user.id);audit(req.user.id,'admin.account_updated','user',req.user.id,email?'email changed':'password changed');const user=db.prepare('SELECT id,name,phone,email,role,status FROM users WHERE id=?').get(req.user.id);res.json({ok:true,user});}catch(e){if(String(e.message).includes('UNIQUE'))return res.status(409).json({error:'البريد الإلكتروني مستخدم بالفعل'});throw e;}});
+app.patch('/api/admin/account',requireAuth,requireRole('admin'),(req,res)=>{const current=String(req.body.current_password||''),next=String(req.body.new_password||''),email=req.body.email===undefined?'':cleanText(req.body.email,254).toLowerCase();const row=db.prepare('SELECT password_hash,must_change_password FROM users WHERE id=?').get(req.user.id);if(!verifyPassword(current,row.password_hash))return res.status(400).json({error:'كلمة المرور الحالية غير صحيحة'});if(email&&!/^\S+@\S+\.\S+$/.test(email))return res.status(400).json({error:'صيغة البريد الإلكتروني غير صحيحة'});if((next||row.must_change_password)&&next.length<12)return res.status(400).json({error:'غيّر كلمة المرور المؤقتة إلى كلمة مرور جديدة من 12 حرفًا على الأقل'});if(row.must_change_password&&!next)return res.status(400).json({error:'يجب تغيير كلمة المرور المؤقتة قبل استخدام لوحة الإدارة'});try{if(email)db.prepare('UPDATE users SET email=? WHERE id=?').run(email,req.user.id);if(next)db.prepare('UPDATE users SET password_hash=?,must_change_password=0 WHERE id=?').run(hashPassword(next),req.user.id);audit(req.user.id,'admin.account_updated','user',req.user.id,email?'email changed':'password changed');const user=db.prepare('SELECT id,name,phone,email,role,status,must_change_password FROM users WHERE id=?').get(req.user.id);res.json({ok:true,user:{...user,must_change_password:Boolean(user.must_change_password)}});}catch(e){if(String(e.message).includes('UNIQUE'))return res.status(409).json({error:'البريد الإلكتروني مستخدم بالفعل'});throw e;}});
 app.get('/api/admin/summary',requireAuth,requireRole('admin'),(_req,res)=>{
  const count=(sql)=>db.prepare(sql).get().n;
  res.json({customers:count("SELECT COUNT(*) n FROM users WHERE role='customer'"),providers:count("SELECT COUNT(*) n FROM users WHERE role='provider'"),pendingProviders:count("SELECT COUNT(*) n FROM users WHERE role='provider' AND status='pending'"),newOrders:count("SELECT COUNT(*) n FROM orders WHERE status='new'"),activeOrders:count("SELECT COUNT(*) n FROM orders WHERE status IN ('accepted','on_the_way','arrived','in_progress')"),completedOrders:count("SELECT COUNT(*) n FROM orders WHERE status='completed'"),cancelledOrders:count("SELECT COUNT(*) n FROM orders WHERE status='cancelled'"),openComplaints:count("SELECT COUNT(*) n FROM complaints WHERE status='open'")});

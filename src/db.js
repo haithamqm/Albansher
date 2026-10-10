@@ -100,6 +100,9 @@ CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id, created_at
 CREATE INDEX IF NOT EXISTS idx_messages_order ON messages(order_id, id);
 `);
 
+const userColumns = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+if (!userColumns.includes('must_change_password')) db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0');
+
 const orderColumns = db.prepare('PRAGMA table_info(orders)').all().map(c => c.name);
 if (!orderColumns.includes('stock_reserved')) db.exec('ALTER TABLE orders ADD COLUMN stock_reserved INTEGER NOT NULL DEFAULT 0');
 
