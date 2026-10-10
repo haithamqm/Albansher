@@ -22,22 +22,43 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
   console.error('ERROR: Set JWT_SECRET to a random secret of at least 32 characters.');
   process.exit(1);
 }
-if (!process.env.DATABASE_URL) {
-  console.error('ERROR: DATABASE_URL is missing. In Railway, reference the DATABASE_URL variable from your PostgreSQL service.');
-  process.exit(1);
-}
+// Railway does not automatically expose another service's variables to this service.
+// Prefer DATABASE_URL. For environments where Railway references are added individually,
+// also accept the standard PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE variables.
+const databaseUrl = String(process.env.DATABASE_URL || '').trim();
+const pgPartsPresent = ['PGHOST','PGUSER','PGPASSWORD','PGDATABASE'].every(k => String(process.env[k] || '').trim());
 let databaseHost = '';
-try {
-  databaseHost = new URL(process.env.DATABASE_URL).hostname;
-} catch {
-  console.error('ERROR: DATABASE_URL is not a valid PostgreSQL connection URL. Use the URL supplied by your Railway PostgreSQL service.');
+let poolConfig;
+if (databaseUrl) {
+  try {
+    const parsed = new URL(databaseUrl);
+    if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) throw new Error('protocol');
+    databaseHost = parsed.hostname;
+    poolConfig = { connectionString: databaseUrl };
+  } catch {
+    console.error('ERROR: DATABASE_URL is not a valid PostgreSQL URL. Use the DATABASE_URL reference from your Railway PostgreSQL service.');
+    process.exit(1);
+  }
+} else if (pgPartsPresent) {
+  databaseHost = String(process.env.PGHOST).trim();
+  poolConfig = {
+    host: databaseHost,
+    port: Number(process.env.PGPORT || 5432),
+    user: process.env.PGUSER,
+    password: process.env.PGPASSWORD,
+    database: process.env.PGDATABASE
+  };
+} else {
+  console.error('ERROR: Database connection is not configured. In Railway, add DATABASE_URL as a reference to your PostgreSQL service, OR add PGHOST, PGPORT, PGUSER, PGPASSWORD, and PGDATABASE as references from that service. Do not use localhost in production.');
   process.exit(1);
 }
-if (process.env.NODE_ENV === 'production' && ['localhost', '127.0.0.1', '::1'].includes(databaseHost)) {
-  console.error('ERROR: DATABASE_URL points to localhost, which is inside this app container. Replace it in Railway Variables with the PostgreSQL service reference, e.g. ${{Postgres.DATABASE_URL}} (replace Postgres with your database service name).');
+if (process.env.NODE_ENV === 'production' && ['localhost', '127.0.0.1', '::1'].includes(databaseHost.toLowerCase())) {
+  console.error('ERROR: Database host points to localhost inside this app container. Replace it with the actual Railway PostgreSQL service reference.');
   process.exit(1);
 }
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: ['localhost', '127.0.0.1', '::1'].includes(databaseHost) ? false : { rejectUnauthorized: false }, max: 10 });
+poolConfig = { ...poolConfig, ssl: ['localhost', '127.0.0.1', '::1'].includes(databaseHost.toLowerCase()) ? false : { rejectUnauthorized: false }, max: 10, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 };
+const pool = new Pool(poolConfig);
+pool.on('error', err => console.error('PostgreSQL idle-client error:', err.message));
 const query = (text, params=[]) => pool.query(text, params);
 const publicDir = path.join(__dirname, 'public');
 const uploadsDir = path.join(__dirname, 'uploads');
