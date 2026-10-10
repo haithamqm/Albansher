@@ -12,11 +12,10 @@ import { hashPassword, verifyPassword, createToken, requireAuth, requireRole, au
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const privateDocsDir = path.resolve(process.env.PROVIDER_DOCUMENTS_PATH || './data/provider-documents');
+const defaultPrivateDocsDir = fs.existsSync('/data') ? '/data/provider-documents' : './data/provider-documents';
+const privateDocsDir = path.resolve(process.env.PROVIDER_DOCUMENTS_PATH || defaultPrivateDocsDir);
 fs.mkdirSync(privateDocsDir, { recursive: true });
 const upload = multer({storage:multer.diskStorage({destination:(_req,_file,cb)=>cb(null,privateDocsDir),filename:(_req,file,cb)=>cb(null,`${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`)}),limits:{fileSize:8*1024*1024,files:2},fileFilter:(_req,file,cb)=>{const ok=['application/pdf','image/jpeg','image/png'].includes(file.mimetype);cb(ok?null:new Error('يسمح بملفات PDF أو JPG أو PNG فقط'),ok)}});
-if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) throw new Error('Production startup blocked: set JWT_SECRET to at least 32 characters.');
-if (process.env.NODE_ENV === 'production' && (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 12 || /ChangeThis|example/i.test(process.env.ADMIN_PASSWORD))) throw new Error('Production startup blocked: set a unique ADMIN_PASSWORD (12+ characters).');
 app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: { directives: {
  defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", 'https://fonts.googleapis.com'],
@@ -76,15 +75,24 @@ function transitionOrder(order, status, actor, note='') {
  }); run(); return {order:getOrder(order.id)};
 }
 
-// Initial admin is created only when no admin exists and explicit environment credentials are supplied.
+// First-start bootstrap: create one administrator without requiring Railway variables.
+// A cryptographically random password is printed only to deployment logs on first creation.
 function bootstrapAdmin() {
- const name=process.env.ADMIN_NAME, email=process.env.ADMIN_EMAIL, password=process.env.ADMIN_PASSWORD;
  if (db.prepare("SELECT 1 FROM users WHERE role='admin' LIMIT 1").get()) return;
- if (!name || !email || !password || password.length<12) {
-  console.warn('No admin created. Set ADMIN_NAME, ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) before first startup.'); return;
+ const name = process.env.ADMIN_NAME || 'مدير البنشر الذكي';
+ const email = (process.env.ADMIN_EMAIL || 'admin@albanshar.app').trim().toLowerCase();
+ const password = process.env.ADMIN_PASSWORD || crypto.randomBytes(24).toString('base64url');
+ if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 12) {
+  throw new Error('تعذر إنشاء حساب الإدارة الأول: تحقق من بيانات الإدارة المخصصة إن كانت مضبوطة.');
  }
- db.prepare('INSERT INTO users(name,email,password_hash,role) VALUES (?,?,?,?)').run(name, email.toLowerCase(), hashPassword(password), 'admin');
- console.log(`Initial admin created for ${email}. Change the password after first login.`);
+ db.prepare("INSERT INTO users(name,email,password_hash,role,status) VALUES (?,?,?,'admin','active')").run(name, email, hashPassword(password));
+ console.log('='.repeat(68));
+ console.log('البنشر الذكي | بيانات دخول المدير الأول — احتفظ بها بسرية');
+ console.log(`البريد الإلكتروني: ${email}`);
+ console.log(`كلمة المرور المؤقتة: ${password}`);
+ console.log('سجّل الدخول عبر /admin ثم غيّر كلمة المرور فورًا من لوحة الإدارة.');
+ console.log('لن تُعرض كلمة المرور مرة أخرى تلقائيًا، ولن يُنشأ مدير آخر عند إعادة التشغيل.');
+ console.log('='.repeat(68));
 }
 bootstrapAdmin();
 

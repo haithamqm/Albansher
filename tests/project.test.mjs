@@ -97,3 +97,15 @@ test('role-specific screens, manager accounts, and private provider verification
   assert.match(read('public/index.html'), /id="providerDocumentsForm"/);
   assert.match(read('public/index.html'), /id="adminCreateForm"/);
 });
+
+
+test('first administrator and JWT secret bootstrap without required Railway variables', () => {
+  const server = read('src/server.js');
+  const auth = read('src/auth.js');
+  assert.match(server, /admin@albanshar\.app/);
+  assert.match(server, /crypto\.randomBytes\(24\)/);
+  assert.match(server, /كلمة المرور المؤقتة/);
+  assert.match(auth, /internal_jwt_secret/);
+  assert.match(auth, /crypto\.randomBytes\(48\)/);
+  assert.doesNotMatch(server, /Production startup blocked: set ADMIN_PASSWORD/);
+});

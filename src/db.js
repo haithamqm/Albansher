@@ -2,7 +2,9 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const dbPath = process.env.DATABASE_PATH || './data/ban-shar.db';
+const railwayVolumeAvailable = fs.existsSync('/data');
+const defaultDbPath = railwayVolumeAvailable ? '/data/ban-shar.db' : './data/ban-shar.db';
+const dbPath = process.env.DATABASE_PATH || defaultDbPath;
 if (dbPath !== ':memory:') fs.mkdirSync(path.dirname(path.resolve(dbPath)), { recursive: true });
 export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
