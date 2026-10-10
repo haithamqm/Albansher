@@ -1,26 +1,25 @@
 {
   "name": "albanshar-aldhaki",
-  "version": "0.2.0",
+  "version": "1.0.0",
+  "description": "البنشر الذكي — خدمات البنشر وصيانة المركبات",
   "private": true,
-  "description": "البنشر الذكي - mobile vehicle services and offers platform",
   "type": "module",
-  "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "check": "node --check src/server.js && node --check src/db.js && node --check src/auth.js && node --check public/app.js",
-    "test": "npm run check && node --test tests/*.test.mjs",
-    "backup": "node scripts/backup.js"
-  },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.18"
   },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.8.1",
-    "express": "^4.21.2",
-    "express-rate-limit": "^7.5.0",
-    "helmet": "^8.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2"
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json && node scripts/postbuild.mjs && tsc -p web.tsconfig.json",
+    "start": "node dist/src/server.js",
+    "dev": "node --watch dist/src/server.js",
+    "migrate": "node dist/src/db/cli.js migrate",
+    "seed": "node dist/src/db/cli.js seed",
+    "seed:demo": "node dist/src/db/cli.js seed --demo",
+    "backup": "node dist/src/db/cli.js backup",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test --test-concurrency=1 dist/test/banshar.test.js dist/test/auth.test.js dist/test/admin-operational.test.js"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "@types/node": "22.0.0"
   }
 }
