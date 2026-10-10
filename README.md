@@ -30,7 +30,7 @@
 
 ## الإعداد المحلي
 
-1. انسخ `.env.example` إلى `.env`.
+1. انسخ `.env.example` إلى `.env`، ثم أدخل رابط قاعدة بياناتك المحلية في `DATABASE_URL` عند التطوير المحلي. قيمة `DATABASE_URL` متروكة فارغة عمدًا في المثال حتى لا يُستخدم رابط localhost التجريبي بالخطأ على Railway.
 2. أنشئ قاعدة PostgreSQL واضبط `DATABASE_URL`.
 3. عيّن `JWT_SECRET` إلى قيمة عشوائية طويلة (32 حرفًا على الأقل).
 4. عيّن `ADMIN_BOOTSTRAP_EMAIL` و`ADMIN_BOOTSTRAP_PASSWORD` و`ADMIN_BOOTSTRAP_NAME` لإنشاء المدير العام الأول. كلمة المرور يجب ألا تقل عن 12 حرفًا.
@@ -48,7 +48,7 @@ npm start
 
 1. ارفع محتويات هذا المجلد إلى مستودع GitHub جديد.
 2. في Railway، أنشئ مشروعًا جديدًا من مستودع GitHub.
-3. أضف PostgreSQL إلى المشروع، واربط متغير `DATABASE_URL` بعنوان قاعدة البيانات من خدمة PostgreSQL (غالبًا يتوفر متغير جاهز من Railway).
+3. أضف PostgreSQL إلى المشروع. في Variables بخدمة التطبيق، اجعل `DATABASE_URL` مرجعًا إلى متغير قاعدة البيانات، مثل `${{Postgres.DATABASE_URL}}` إذا كان اسم خدمة قاعدة البيانات `Postgres`؛ استخدم الاسم الفعلي لخدمتك. لا تستخدم عنوان `localhost` على Railway. راجع `RAILWAY-FIX-AR.md`.
 4. أضف متغيرات البيئة التالية في خدمة التطبيق:
    - `JWT_SECRET`: سر عشوائي قوي طويل.
    - `ADMIN_BOOTSTRAP_EMAIL`: البريد الذي تريد استخدامه للمدير العام أول مرة.

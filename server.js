@@ -23,10 +23,21 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
   process.exit(1);
 }
 if (!process.env.DATABASE_URL) {
-  console.error('ERROR: DATABASE_URL is required. Attach a PostgreSQL database in Railway and set DATABASE_URL.');
+  console.error('ERROR: DATABASE_URL is missing. In Railway, reference the DATABASE_URL variable from your PostgreSQL service.');
   process.exit(1);
 }
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }, max: 10 });
+let databaseHost = '';
+try {
+  databaseHost = new URL(process.env.DATABASE_URL).hostname;
+} catch {
+  console.error('ERROR: DATABASE_URL is not a valid PostgreSQL connection URL. Use the URL supplied by your Railway PostgreSQL service.');
+  process.exit(1);
+}
+if (process.env.NODE_ENV === 'production' && ['localhost', '127.0.0.1', '::1'].includes(databaseHost)) {
+  console.error('ERROR: DATABASE_URL points to localhost, which is inside this app container. Replace it in Railway Variables with the PostgreSQL service reference, e.g. ${{Postgres.DATABASE_URL}} (replace Postgres with your database service name).');
+  process.exit(1);
+}
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: ['localhost', '127.0.0.1', '::1'].includes(databaseHost) ? false : { rejectUnauthorized: false }, max: 10 });
 const query = (text, params=[]) => pool.query(text, params);
 const publicDir = path.join(__dirname, 'public');
 const uploadsDir = path.join(__dirname, 'uploads');
