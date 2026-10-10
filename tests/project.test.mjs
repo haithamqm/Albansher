@@ -77,3 +77,23 @@ test('role dashboards have dedicated paths and the workshop hero is a custom ill
   assert.match(server, /app\.get\('\/api\/admin\/offers'/);
   assert.match(html, /id="adminOffers"/);
 });
+
+
+test('role-specific screens, manager accounts, and private provider verification documents are implemented', () => {
+  const app = read('public/app.js');
+  const css = read('public/styles.css');
+  const server = read('src/server.js');
+  const db = read('src/db.js');
+  assert.match(css, /body\.route-provider #home/);
+  assert.match(css, /body\.route-admin #home/);
+  assert.match(server, /app\.get\('\/api\/admin\/admins'/);
+  assert.match(server, /app\.post\('\/api\/admin\/admins'/);
+  assert.match(server, /app\.patch\('\/api\/admin\/account'/);
+  assert.match(server, /\/api\/provider\/documents/);
+  assert.match(server, /لا يمكن اعتماد مقدم الخدمة قبل رفع الهوية والترخيص/);
+  assert.match(server, /\/api\/admin\/provider-documents\/:id\/download/);
+  assert.match(db, /CREATE TABLE IF NOT EXISTS provider_documents/);
+  assert.match(app, /viewProviderDocuments/);
+  assert.match(read('public/index.html'), /id="providerDocumentsForm"/);
+  assert.match(read('public/index.html'), /id="adminCreateForm"/);
+});

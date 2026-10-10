@@ -15,7 +15,7 @@ export function requireAuth(req, res, next) {
  try {
   const payload = jwt.verify(token, process.env.JWT_SECRET, { issuer: 'albanshar-aldhaki' });
   const user = db.prepare('SELECT id,name,phone,email,role,status FROM users WHERE id=?').get(payload.sub);
-  if (!user || user.status !== 'active') return res.status(401).json({ error: 'الحساب غير متاح' });
+  if (!user || (user.status !== 'active' && !(user.role === 'provider' && user.status === 'pending'))) return res.status(401).json({ error: 'الحساب غير متاح' });
   req.user = user; next();
  } catch { return res.status(401).json({ error: 'جلسة الدخول غير صالحة أو منتهية' }); }
 }

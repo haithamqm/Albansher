@@ -19,6 +19,12 @@ CREATE TABLE IF NOT EXISTS provider_profiles (
  region TEXT, services_json TEXT NOT NULL DEFAULT '[]', availability TEXT NOT NULL DEFAULT 'offline',
  approved INTEGER NOT NULL DEFAULT 0, bio TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS provider_documents (
+ id INTEGER PRIMARY KEY, provider_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ doc_type TEXT NOT NULL CHECK(doc_type IN ('identity','license')), original_name TEXT NOT NULL,
+ stored_name TEXT NOT NULL UNIQUE, mime_type TEXT NOT NULL, size_bytes INTEGER NOT NULL,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(provider_id,doc_type)
+);
 CREATE TABLE IF NOT EXISTS services (
  id INTEGER PRIMARY KEY, name_ar TEXT NOT NULL, name_en TEXT NOT NULL, description_ar TEXT DEFAULT '',
  description_en TEXT DEFAULT '', category TEXT NOT NULL DEFAULT 'general', pricing_type TEXT NOT NULL DEFAULT 'quote',
