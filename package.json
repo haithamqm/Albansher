@@ -1,10 +1,9 @@
 {
-  "name":"albansher-al-thaki",
-  "version":"1.0.0",
-  "private":true,
-  "description":"البنشر الذكي - منصة خدمات الإطارات والمركبات",
-  "main":"server.js",
-  "scripts":{"start":"node server.js","check":"node --check server.js"},
-  "engines":{"node":">=20"},
-  "dependencies":{"express":"^4.21.2","pg":"^8.13.1"}
+  "name": "al-banshur-al-thaki",
+  "version": "1.0.0",
+  "private": true,
+  "description": "البنشر الذكي - خدمات المركبات والبنشر المتنقل",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "check": "node --check server.js" },
+  "engines": { "node": ">=20" }
 }
