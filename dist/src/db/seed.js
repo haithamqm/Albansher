@@ -16,6 +16,8 @@ export async function seedBase(db, config) {
         // الإعدادات الافتراضية تُكتب في القاعدة لتظهر وتُعدَّل من اللوحة (لا تُستبدل إن كانت موجودة)
         for (const [key, m] of Object.entries(SETTINGS))
             db.run('INSERT OR IGNORE INTO system_settings(key,value,description,updated_at) VALUES (?,?,?,?)', key, j(m.def), m.desc, now);
+        // البنشر الذكي لا يقدم مشاوير بالدباب؛ أوقف الإعداد القديم حتى في قواعد البيانات المرقّاة.
+        db.run("INSERT INTO system_settings(key,value,description,updated_at) VALUES ('trips.enabled','false','ميزة قديمة غير مستخدمة في البنشر الذكي',?) ON CONFLICT(key) DO UPDATE SET value='false',description=excluded.description,updated_at=excluded.updated_at", now);
         CATEGORIES.forEach((c, ci) => {
             let cat = db.get('SELECT id FROM categories WHERE slug = ?', c.slug);
             if (!cat) {
@@ -111,6 +113,8 @@ export async function seedBase(db, config) {
             // عند استخدام قاعدة بيانات قديمة، أخفِ كتالوج الخدمات العامة من واجهة التشغيل دون حذف سجلات الطلبات التاريخية.
             db.run(`UPDATE categories SET is_active=CASE WHEN slug='vehicle-services' THEN 1 ELSE 0 END, updated_at=?`, now);
             db.run(`UPDATE services SET is_active=0, updated_at=? WHERE category_id<>?`, now, vehicleCategory.id);
+            // عطّل خدمة المشاوير القديمة صراحةً حتى لو كانت محفوظة داخل قسم المركبات في قاعدة قديمة.
+            db.run("UPDATE services SET is_active=0,updated_at=? WHERE slug='motorcycle-trips'", now);
         }
     });
     // مدير النظام الأول

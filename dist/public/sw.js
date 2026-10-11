@@ -1,4 +1,4 @@
-const CACHE='albanshar-dhaki-v1';
+const CACHE='albanshar-dhaki-v1-0-2';
 const SHELL=['/','/customer','/customer.html','/provider','/provider.html','/admin','/admin.html','/css/app.css','/js/app.js','/manifest.webmanifest','/manifest-customer.webmanifest','/manifest-provider.webmanifest','/manifest-admin.webmanifest','/js/install-app.js','/images/garage.svg','/icons/icon-customer-192.png','/icons/icon-customer-512.png','/icons/icon-provider-192.png','/icons/icon-provider-512.png','/icons/icon-admin-192.png','/icons/icon-admin-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('albanshar-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

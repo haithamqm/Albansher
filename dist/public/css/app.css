@@ -402,3 +402,37 @@ body{background:radial-gradient(circle at 5% 0%,rgba(91,61,245,.12),transparent 
 /* البنشر الذكي — هوية بصرية للمركبات: فحمي هادئ مع كهرماني مهني */
 :root{--primary:#b85f28;--primary-2:#293b48;--primary-soft:#fff0e5;--accent:#d69a58;--accent-soft:#fff7ec;--ink:#1d2a33;--muted:#657580;--surface:#fff;--surface-2:#f4f7f8;--line:#dfe6e9;--shadow-sm:0 2px 8px rgba(28,43,52,.055);--shadow:0 12px 32px rgba(28,43,52,.085)}
 html,body{background:#f3f6f7}body{background:radial-gradient(circle at 8% 0%,rgba(184,95,40,.075),transparent 27rem),radial-gradient(circle at 92% 10%,rgba(41,59,72,.055),transparent 24rem),#f5f7f8}.brand{color:var(--primary)}.brand-mark{background:linear-gradient(145deg,#344b59,#202f39);box-shadow:0 8px 18px rgba(32,47,57,.2);transform:none}.hero{background:linear-gradient(125deg,#243641 0%,#354d5a 68%,#98613b 100%);box-shadow:0 18px 42px rgba(32,47,57,.14)}.btn{background:linear-gradient(135deg,#b85f28,#d18243);box-shadow:0 6px 14px rgba(184,95,40,.15)}.btn:hover{box-shadow:0 9px 18px rgba(184,95,40,.2)}.btn.secondary:hover{border-color:#e2b18b;background:#fffaf6}.status,.count{background:var(--primary-soft);color:var(--primary);border-color:#f0d4c0}.field input:focus,.field textarea:focus,.field select:focus,.search-box input:focus{border-color:#d18a55;box-shadow:0 0 0 4px rgba(184,95,40,.11)}.section-tab:hover,.section-tab.active{color:var(--primary)}.section-tab.active{border-bottom-color:var(--primary)}.suggestion-arrow,.choose-link{color:var(--primary)}.garage-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(230px,.9fr);gap:22px;align-items:center;min-height:280px;padding:28px 34px}.garage-hero-copy{position:relative;z-index:2}.garage-eyebrow{display:inline-flex;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.09);border-radius:99px;padding:5px 12px;font-size:12px;font-weight:800;letter-spacing:.1px}.garage-hero h1{font-size:clamp(32px,4vw,48px);margin:12px 0 8px}.garage-hero p{max-width:540px;line-height:1.9}.garage-hero-art{width:100%;max-height:235px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 18px 24px rgba(0,0,0,.12))}.garage-hero-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px}.garage-primary-action{background:linear-gradient(135deg,#e3a263,#c7793d);color:#202f39;box-shadow:none}.garage-trust-note{font-size:12px;color:rgba(255,255,255,.78)}.garage-search-card{margin-bottom:20px;border-radius:20px}.garage-search-card .section-heading{gap:12px;flex-wrap:wrap}.garage-search-card .search-box{min-width:0}.category-grid .category-card:nth-child(1){--cat-bg:#fff5eb;--cat-orb:rgba(184,95,40,.12);border-color:#f0dece}.quick-services .quick-service,.service-picker .service-option{background:linear-gradient(145deg,#fff,#fbf8f5);border-color:#e8e0d9}.quick-services .quick-service::before,.service-picker .service-option::before{background:linear-gradient(180deg,#b85f28,#d69a58)}.category-card .icon{background:#fffaf5;border-color:#f3e7dc}.category-card b{color:#273944}.order-card::before{background:var(--primary)}.customer-shell .brand{color:var(--primary)}.customer-shell .brand-mark{background:linear-gradient(145deg,#344b59,#202f39)}.customer-shell .brand-lockup strong{color:#243641}.customer-shell .simple-submit-btn:hover{background:linear-gradient(135deg,#b85f28,#98613b)}@media(max-width:700px){.garage-hero{grid-template-columns:1fr;padding:22px 20px;gap:5px}.garage-hero-art{max-height:155px;grid-row:1}.garage-hero-copy{grid-row:2}.garage-hero h1{font-size:31px}.garage-trust-note{font-size:11px}.garage-search-card .status{white-space:nowrap}}
+
+/* البنشر الذكي 1.0.2 — إصلاح تباين النصوص في واجهة العميل */
+.customer-shell{color:#24343b}
+.customer-shell .hero.customer-simple-hero{color:#24343b!important}
+.customer-shell .hero.customer-simple-hero p,
+.customer-shell .hero.customer-simple-hero .muted{color:#53656b!important}
+.customer-shell .simple-request-card,
+.customer-shell .manual-service-fallback,
+.customer-shell .garage-search-card,
+.customer-shell .category-card,
+.customer-shell .quick-service,
+.customer-shell .service-option,
+.customer-shell .order-card,
+.customer-shell .notification-card,
+.customer-shell .modal>.card{color:#24343b}
+.customer-shell .simple-request-card h1,
+.customer-shell .simple-request-card h2,
+.customer-shell .simple-request-card h3,
+.customer-shell .simple-request-card b,
+.customer-shell .manual-service-fallback b,
+.customer-shell .category-card b,
+.customer-shell .quick-service b,
+.customer-shell .service-option b,
+.customer-shell .order-card b{color:#24343b}
+.customer-shell .simple-request-card p,
+.customer-shell .simple-request-card small,
+.customer-shell .manual-service-fallback p,
+.customer-shell .category-card small,
+.customer-shell .quick-service small,
+.customer-shell .service-option p,
+.customer-shell .order-card small{color:#5b6b72}
+.customer-shell .btn:not(.secondary),
+.customer-shell .simple-submit-btn{color:#fff}
+.customer-shell .hero.customer-simple-hero .btn.garage-primary-action{color:#24343b}
